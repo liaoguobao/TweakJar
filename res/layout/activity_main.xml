@@ -44,7 +44,12 @@
         android:id="@+id/btn_eight"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="替换方法逻辑"/>
+        android:text="无条件替换方法逻辑"/>
+      <Button 
+        android:id="@+id/btn_nine"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="有条件替换方法逻辑"/>
     <Button
         android:id="@+id/btn_test"
          android:layout_width="wrap_content"

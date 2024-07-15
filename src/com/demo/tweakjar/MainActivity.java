@@ -5,10 +5,10 @@ import com.android.guobao.liao.apptweak.JavaTweakHook;
 import com.android.guobao.liao.apptweak.JavaTweakReplace;
 
 import android.app.Activity;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
-import android.widget.Toast;
 
 public class MainActivity extends Activity {
     @Override
@@ -64,29 +64,52 @@ public class MainActivity extends Activity {
                 //微调方法逻辑
                 JavaTweakBridge.hookJavaMethod(Activity.class, "startActivityForResult(android.content.Intent,int,android.os.Bundle)", new JavaTweakHook() {
                     protected void beforeHookedMethod(Object thiz, Object[] args) {
-                        Toast.makeText(getApplicationContext(), "方法被调用前", Toast.LENGTH_LONG).show();
+                        BlockingDialog.showBlockingDialog((Activity) thiz, "提示", "创建Activity前");
                     }
 
                     protected void afterHookedMethod(Object thiz, Object[] args) {
-                        Toast.makeText(getApplicationContext(), "方法被调用后", Toast.LENGTH_LONG).show();
+                        BlockingDialog.showBlockingDialog((Activity) thiz, "提示", "创建Activity后");
                     }
                 });
             }
         });
         findViewById(R.id.btn_eight).setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
-                //替换方法逻辑
+                //无条件替换方法逻辑
                 JavaTweakBridge.hookJavaMethod(Activity.class, "startActivityForResult(android.content.Intent,int,android.os.Bundle)", new JavaTweakReplace() {
                     protected Object replaceHookedMethod(Object thiz, Object[] args) {
-                        Toast.makeText(getApplicationContext(), "Activity不再创建", Toast.LENGTH_LONG).show();
+                        BlockingDialog.showBlockingDialog((Activity) thiz, "提示", "不再创建Activity");
                         return null;
+                    }
+                });
+            }
+        });
+        findViewById(R.id.btn_nine).setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                //有条件替换逻辑
+                JavaTweakBridge.hookJavaMethod(Activity.class, "startActivityForResult(android.content.Intent,int,android.os.Bundle)", new JavaTweakHook() {
+                    protected void beforeHookedMethod(Object thiz, Object[] args) {
+                        int which = BlockingDialog.showBlockingDialog((Activity) thiz, "提示", "点击确定会继续创建Activity\n点击取消会不再创建Activity");
+                        if (which == DialogInterface.BUTTON_NEGATIVE) {
+                            setResult(null);
+                        }
                     }
                 });
             }
         });
         findViewById(R.id.btn_test).setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
-                //hook测试
+                //自动打印调用堆栈日志(默认不打印，下面的两种写法任选其一)
+                //JavaTweakBridge.hookJavaMethod(Activity.class, "()", true);
+                //JavaTweakBridge.hookJavaMethod(Activity.class, "()", JavaTweakHook.HOOK_FLAG_STACK_TRACE);
+
+                //禁止打印调用参数日志(默认会打印)
+                //JavaTweakBridge.hookJavaMethod(Activity.class, "()", JavaTweakHook.HOOK_FLAG_NO_CALL_LOG);
+
+                //为被混淆的方法设置别名(优化日志输出)
+                //JavaTweakBridge.hookJavaMethod(Activity.class, "findViewById", "Activity_findViewById");
+
+                //创建新的Activity以测试hook效果
                 startActivity(new Intent(MainActivity.this, MainActivity.class));
             }
         });
