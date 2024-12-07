@@ -44,7 +44,7 @@ public abstract class JavaTweakHook {
     protected void afterHookedMethod(Object thiz, Object[] args) {
     }
 
-    synchronized //此函数必须要同步执行，因为很有可能会在多线程中被频繁调用
+    synchronized //lock
     protected final Object handleHookedMethod(Object thiz, Object[] args) throws Throwable {
         result_ = null;
         except_ = null;

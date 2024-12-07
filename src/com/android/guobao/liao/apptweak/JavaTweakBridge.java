@@ -24,6 +24,7 @@ public class JavaTweakBridge {
 
     static private native Method nativeHookMethod(Class<?> hook_class, String hook_method, Object hook_data, boolean can_hook_chain);
 
+    synchronized //lock
     static public boolean hookJavaMethod(Class<?> hook_class, String hook_method, JavaTweakHook hook_data) {
         try {
             boolean can_hook_chain = false;
@@ -36,7 +37,8 @@ public class JavaTweakBridge {
                 return false;
             }
             String method_decl = ReflectUtil.getMemberDeclare(hook_member, false);
-            if (!can_hook_chain && backupMethods.containsKey(method_decl)) {
+            String method_key = String.format("%s@%x", method_decl, hook_class.getClassLoader().hashCode());
+            if (!can_hook_chain && backupMethods.containsKey(method_key)) {
                 //writeToLogcat(Log.WARN, "hookJavaMethod: method<%s> hook repeat.", hook_method);
                 return false;
             }
@@ -49,7 +51,7 @@ public class JavaTweakBridge {
                 return false;
             }
             hook_data.setBackup(m);
-            backupMethods.put(method_decl, hook_data);
+            backupMethods.put(method_key, hook_data);
             writeToLogcat(Log.INFO, "hookJavaMethod: method<%s> hook ok.", hook_method);
             return true;
         } catch (Throwable e) {
@@ -63,6 +65,9 @@ public class JavaTweakBridge {
     }
 
     static public boolean hookAllJavaMethods(Class<?> hook_class, String method_name, JavaTweakHook hook_data) {
+        if (hook_class == null) {
+            return false;
+        }
         Method[] ms = hook_class.getDeclaredMethods();
         for (int i = 0; i < ms.length; i++) {
             if (method_name.equals("") || ms[i].getName().equals(method_name)) {
@@ -87,6 +92,9 @@ public class JavaTweakBridge {
     }
 
     static public boolean hookAllJavaConstructors(Class<?> hook_class, JavaTweakHook hook_data) {
+        if (hook_class == null) {
+            return false;
+        }
         Constructor<?>[] cs = hook_class.getDeclaredConstructors();
         for (int i = 0; i < cs.length; i++) {
             if (true) {
@@ -110,16 +118,19 @@ public class JavaTweakBridge {
         Constructor<?> hook_constr = hook_data.getClass().getDeclaredConstructors()[0];
         String cons = ReflectUtil.getMemberDeclare(hook_constr, true);
 
-        Object thiz = ReflectUtil.getObjectField(hook_data, "this$0");
+        Class<?>[] ts = hook_constr.getParameterTypes();
+        String zero_ = ts.length > 0 ? ts[0].getName() : "";
+        String this_ = zero_.equals("int") || zero_.equals("java.lang.String") ? "" : zero_;
+
+        Object thiz_ = ReflectUtil.getObjectField(hook_data, this_);
         Object name_ = ReflectUtil.getObjectField(hook_data, "name_");
         Object flags_ = ReflectUtil.getObjectField(hook_data, "flags_");
 
         ArrayList<Object> args = new ArrayList<Object>();
-        Class<?>[] ts = hook_constr.getParameterTypes();
         for (int i = 0; i < ts.length; i++) {
             String t = ts[i].getName();
-            if (i == 0 && thiz != null) {
-                args.add(thiz);
+            if (i == 0 && thiz_ != null) {
+                args.add(thiz_);
             } else if (t.equals("java.lang.String")) {
                 args.add(name_);
             } else if (t.equals("int")) {

@@ -5,6 +5,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Member;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.Arrays;
 
 public class ReflectUtil {
@@ -198,6 +199,17 @@ public class ReflectUtil {
         } catch (Exception e) {
             return null;
         }
+    }
+
+    static public String peekObject(Class<?> clazz) {
+        String str = clazz.getName() + "->peekObject{\r\n";
+
+        Field[] fs = clazz.getDeclaredFields();
+        for (int i = 0; i < fs.length && (fs[i].getModifiers() & Modifier.STATIC) != 0; i++) {
+            str += String.format("\to%02d: %s = %s\r\n", i, fs[i].getName(), peekValue(getClassField(clazz, fs[i].getName())));
+        }
+        str += "}\r\n";
+        return str;
     }
 
     static public String peekObject(Object o, Class<?> clazz) {
